@@ -24,7 +24,8 @@ public class ChatEndpoint {
     private static HashMap<String, String> users = new HashMap<>();
 
     @OnOpen
-    public void onOpen(Session session, @PathParam("username") String username) throws IOException, EncodeException {
+    public void onOpen(Session session, @PathParam("username") String username) 
+            throws IOException, EncodeException {
         this.session = session;
         chatEndpoints.add(this);
         users.put(session.getId(), username);
@@ -37,8 +38,16 @@ public class ChatEndpoint {
 
     @OnMessage
     public void onMessage(Session session, Message message) throws IOException, EncodeException {
-        message.setFrom(users.get(session.getId()));
-        broadcast(message);
+        if (chatEndpoints.contains(this)){
+        
+            if (message.getContent().equals("Disconnected")){
+                 onClose(session);
+            }
+            else{
+                message.setFrom(users.get(session.getId()));
+                broadcast(message);
+            }
+        }
     }
 
     @OnClose
@@ -55,7 +64,8 @@ public class ChatEndpoint {
         // Do error handling here
     }
 
-    private static void broadcast(Message message) throws IOException, EncodeException {
+    private static void broadcast(Message message) 
+            throws IOException, EncodeException {
         chatEndpoints.forEach(endpoint -> {
             synchronized (endpoint) {
                 try {
